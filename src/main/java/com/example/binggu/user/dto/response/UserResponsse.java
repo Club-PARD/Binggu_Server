@@ -14,13 +14,11 @@ public class UserResponsse {
     @Builder
     public static class UserInfo{
         private Long id;
-        private String name;
         private Map<Long, Route> routes;
 
         public static UserInfo from(User user){
             return UserInfo.builder()
                     .id(user.getId())
-                    .name(user.getName())
                     .routes(user.getRoutes())
                     .build();
 

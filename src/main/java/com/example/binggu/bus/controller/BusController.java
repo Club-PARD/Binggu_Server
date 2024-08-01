@@ -24,4 +24,10 @@ public class BusController {
         List<BusResponse.StationResponse> res = busService.buildBusStationUrl(req);
         return ResponseEntity.ok().body(res);
     }
+
+    @PostMapping("/arrivalTime")
+    public ResponseEntity<List<BusResponse.BusArrivalResonse>> getBusArrivalTime(@RequestBody BusRequest.BusArrivalRequest req) throws IOException{
+        List<BusResponse.BusArrivalResonse> res = busService.getBusArrivalTime(req);
+        return ResponseEntity.ok().body(res);
+    }
 }

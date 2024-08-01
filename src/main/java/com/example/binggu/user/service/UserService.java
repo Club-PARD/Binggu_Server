@@ -25,8 +25,8 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponsse.UserCreateRes addUser(UserRequest.SignInUser req) {
-        userRepo.save(UserRequest.SignInUser.from(req));
+    public UserResponsse.UserCreateRes addUser() {
+        userRepo.save(new User(userRepo.count()+1));
         return UserResponsse.UserCreateRes.from(userRepo.count());
     }
 
