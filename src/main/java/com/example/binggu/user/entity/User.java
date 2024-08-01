@@ -23,6 +23,9 @@ public class User {
     @MapKeyColumn(name = "route_id")
     private Map<Long, Route> routes;
 
+    public User(long id) {
+    }
+
     public void addRoute(Long routeId, Route route) {
         this.routes.put(routeId, route);
     }

@@ -22,8 +22,8 @@ public class UserController {
     }
 
     @PostMapping("")
-    public ResponseEntity<UserResponsse.UserCreateRes> addUser(@RequestBody UserRequest.SignInUser req){
-        return ResponseEntity.ok().body(userService.addUser(req));
+    public ResponseEntity<UserResponsse.UserCreateRes> addUser(){
+        return ResponseEntity.ok().body(userService.addUser());
     }
 
     @PostMapping("/{id}")

@@ -14,4 +14,17 @@ public class BusResponse {
         private String stationId;
         private String stationName;
     }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class BusArrivalResonse{
+        private String routeNumber;
+        private String routeType;
+        private String busType;
+        private Long numOfStationBeforeArrival;
+        private Long arrivalMin;
+
+    }
 }

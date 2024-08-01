@@ -14,4 +14,12 @@ public class BusRequest {
         private float latitude; //위도
         private float longtitude; //경도
     }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class BusArrivalRequest{
+        private String stationId;
+    }
 }
