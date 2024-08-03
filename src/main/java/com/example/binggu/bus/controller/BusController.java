@@ -6,10 +6,7 @@ import com.example.binggu.bus.service.BusService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
@@ -50,6 +47,12 @@ public class BusController {
     @PostMapping("/stationXY")
     public ResponseEntity<BusResponse.busNumStationId> getStationXY(@RequestBody BusRequest.BusStationXYRequest req) throws IOException{
         BusResponse.busNumStationId res = busService.getStationXY(req);
+        return ResponseEntity.ok().body(res);
+    }
+
+    @PostMapping("/busNum")
+    public ResponseEntity<BusResponse.busNum> getBusNum(@RequestBody BusRequest.BusNumRequest req) throws IOException {
+        BusResponse.busNum res = busService.getBusNum(req);
         return ResponseEntity.ok().body(res);
     }
 
