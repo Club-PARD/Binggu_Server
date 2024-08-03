@@ -29,10 +29,10 @@ public class BusService {
     @Value("${api.service.key}")
     private String apiServiceKey;
 
-    private StringBuilder urlDaeguAppend(StringBuilder url) throws UnsupportedEncodingException {
+    private StringBuilder urlDaeguAppend(StringBuilder url, int pageNo) throws UnsupportedEncodingException {
         StringBuilder urlBuilder = new StringBuilder(url);
         urlBuilder.append(URLEncoder.encode("serviceKey", "UTF-8")).append("=").append(apiServiceKey);
-        urlBuilder.append("&").append(URLEncoder.encode("pageNo", "UTF-8")).append("=").append(URLEncoder.encode("1", "UTF-8"));
+        urlBuilder.append("&").append(URLEncoder.encode("pageNo", "UTF-8")).append("=").append(URLEncoder.encode(String.valueOf(pageNo), "UTF-8"));
         urlBuilder.append("&").append(URLEncoder.encode("numOfRows", "UTF-8")).append("=").append(URLEncoder.encode("10", "UTF-8"));
         urlBuilder.append("&").append(URLEncoder.encode("_type", "UTF-8")).append("=").append(URLEncoder.encode("json", "UTF-8"));
         urlBuilder.append("&").append(URLEncoder.encode("cityCode", "UTF-8")).append("=").append(URLEncoder.encode("22", "UTF-8"));
@@ -47,7 +47,7 @@ public class BusService {
         conn.setRequestMethod("GET");
         conn.setRequestProperty("Content-type", "application/json");
         BufferedReader rd;
-        if(conn.getResponseCode() >= 200 && conn.getResponseCode() <= 300) {
+        if (conn.getResponseCode() >= 200 && conn.getResponseCode() <= 300) {
             rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
         } else {
             rd = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
@@ -99,122 +99,123 @@ public class BusService {
     }
 
 
-        public List<BusResponse.StationResponse> buildBusStationUrl(BusRequest.BusStationRequest req) throws IOException {
+    public List<BusResponse.StationResponse> buildBusStationUrl(BusRequest.BusStationRequest req) throws IOException {
 
-            //            공공데이터 포털에서 받은 Response 중 버스정류장 이름과 Id만 dto로 만들어 프런트에 보내준다
-            List<BusResponse.StationResponse> nodeInfoList = new ArrayList<>();
+        //            공공데이터 포털에서 받은 Response 중 버스정류장 이름과 Id만 dto로 만들어 프런트에 보내준다
+        List<BusResponse.StationResponse> nodeInfoList = new ArrayList<>();
 //            공공데이터 포털에 요청할 url 만들기
-            String urlBuilder = "http://apis.data.go.kr/1613000/BusSttnInfoInqireService/getCrdntPrxmtSttnList?" +
-                    URLEncoder.encode("serviceKey", "UTF-8") + "=" + apiServiceKey +
-                    "&" + URLEncoder.encode("pageNo", StandardCharsets.UTF_8) + "=" + URLEncoder.encode("1", StandardCharsets.UTF_8) +
-                    "&" + URLEncoder.encode("numOfRows", "UTF-8") + "=" + URLEncoder.encode("10", "UTF-8") + /*한 페이지 결과 수*/
-                    "&" + URLEncoder.encode("_type", "UTF-8") + "=" + URLEncoder.encode("json", "UTF-8") + /*데이터 타입(xml, json)*/
-                    "&" + URLEncoder.encode("gpsLati", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(req.getLatitude()), "UTF-8") + /*WGS84 위도 좌표*/
-                    "&" + URLEncoder.encode("gpsLong", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(req.getLongtitude()), "UTF-8");
+        String urlBuilder = "http://apis.data.go.kr/1613000/BusSttnInfoInqireService/getCrdntPrxmtSttnList?" +
+                URLEncoder.encode("serviceKey", "UTF-8") + "=" + apiServiceKey +
+                "&" + URLEncoder.encode("pageNo", StandardCharsets.UTF_8) + "=" + URLEncoder.encode("1", StandardCharsets.UTF_8) +
+                "&" + URLEncoder.encode("numOfRows", "UTF-8") + "=" + URLEncoder.encode("10", "UTF-8") + /*한 페이지 결과 수*/
+                "&" + URLEncoder.encode("_type", "UTF-8") + "=" + URLEncoder.encode("json", "UTF-8") + /*데이터 타입(xml, json)*/
+                "&" + URLEncoder.encode("gpsLati", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(req.getLatitude()), "UTF-8") + /*WGS84 위도 좌표*/
+                "&" + URLEncoder.encode("gpsLong", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(req.getLongtitude()), "UTF-8");
 
-            String jsonRouteNum = makeStringJsonResponse(urlBuilder);
-            JsonNode items = getJsonNodeItems(jsonRouteNum);
+        String jsonRouteNum = makeStringJsonResponse(urlBuilder);
+        JsonNode items = getJsonNodeItems(jsonRouteNum);
 
-                // 결과중 정류장Id,정류장 이름만 Dto로 만든후 List<DTO>에 추가
-                if (items.isArray()) {
-                    for (JsonNode item : items) {
-                        String nodeno = item.path("nodenm").asText();
-                        String nodenm = item.path("nodeid").asText();
-                        Long routeno = item.path("nodeno").asLong();
-                        BusResponse.StationResponse nodeInfoDto = new BusResponse.StationResponse(nodenm, nodeno,routeno);
-                        nodeInfoList.add(nodeInfoDto);
-                    }
-                }
-
-            return nodeInfoList;
+        // 결과중 정류장Id,정류장 이름만 Dto로 만든후 List<DTO>에 추가
+        if (items.isArray()) {
+            for (JsonNode item : items) {
+                String nodeno = item.path("nodenm").asText();
+                String nodenm = item.path("nodeid").asText();
+                Long routeno = item.path("routeno").asLong();
+                BusResponse.StationResponse nodeInfoDto = new BusResponse.StationResponse(nodenm, nodeno, routeno);
+                nodeInfoList.add(nodeInfoDto);
+            }
         }
 
-//        버스 경로 가져오려면 정류소 Id로 노선 번호를 뽑음, 그걸로 버스 노선 번호(routeid)들을 뽑고, routeid로 정류장 목록조회
-        public BusResponse.RouteNumList getRouteByStationId(BusRequest.RouteNumRequest req) throws IOException {
-            List<String> routes = new ArrayList<>();
+        return nodeInfoList;
+    }
 
-            StringBuilder stringBuilderRouteNo = new StringBuilder("http://apis.data.go.kr/1613000/BusSttnInfoInqireService/getSttnThrghRouteList?");
-            String routeNo = urlDaeguAppend(stringBuilderRouteNo).append("&").append(URLEncoder.encode("nodeid", "UTF-8")).append("=").append(URLEncoder.encode(req.getStationId(), "UTF-8")).toString();
+    //        버스 경로 가져오려면 정류소 Id로 노선 번호를 뽑음, 그걸로 버스 노선 번호(routeid)들을 뽑고, routeid로 정류장 목록조회
+    public BusResponse.RouteNumList getRouteByStationId(BusRequest.RouteNumRequest req) throws IOException {
+        List<String> routes = new ArrayList<>();
 
-            String jsonResponse = makeStringJsonResponse(routeNo);
-            JsonNode items = getJsonNodeItems(jsonResponse);
+        StringBuilder stringBuilderRouteNo = new StringBuilder("http://apis.data.go.kr/1613000/BusSttnInfoInqireService/getSttnThrghRouteList?");
+        String routeNo = urlDaeguAppend(stringBuilderRouteNo, 1).append("&").append(URLEncoder.encode("nodeid", "UTF-8")).append("=").append(URLEncoder.encode(req.getStationId(), "UTF-8")).toString();
 
-            if(items.isArray()){
-                for(JsonNode item : items){
+        String jsonResponse = makeStringJsonResponse(routeNo);
+        JsonNode items = getJsonNodeItems(jsonResponse);
+
+        if (items.isArray()) {
+            for (JsonNode item : items) {
+                String routeid = item.path("routeid").asText();
+
+                routes.add(routeid);
+            }
+        }
+
+        //            도착지의 위도 경도로 도착지 근처 station의 id를 찾음
+        List<BusResponse.StationResponse> str = buildBusStationUrl(new BusRequest.BusStationRequest().from(req.getDestLatitude(), req.getDestLongtitude()));
+        List<String> destStationIds = new ArrayList<>();
+        for (BusResponse.StationResponse stationResponse : str) {
+            destStationIds.add(stationResponse.getStationId());
+        }
+
+        System.out.println(destStationIds);
+
+        List<String> destRoutesIds = new ArrayList<>();
+
+        for (int i = 0; i < destStationIds.size(); i++) {
+            StringBuilder destBuilderRouteNo = new StringBuilder("http://apis.data.go.kr/1613000/BusSttnInfoInqireService/getSttnThrghRouteList?");
+            String destRouteNo = urlDaeguAppend(destBuilderRouteNo,1).append("&").append(URLEncoder.encode("nodeid", "UTF-8")).append("=").append(URLEncoder.encode(destStationIds.get(i), "UTF-8")).toString();
+
+            String jResponse = makeStringJsonResponse(destRouteNo);
+            JsonNode jItems = getJsonNodeItems(jResponse);
+
+            if (jItems.isArray()) {
+                for (JsonNode item : items) {
                     String routeid = item.path("routeid").asText();
 
-                    routes.add(routeid);
+                    destRoutesIds.add(routeid);
                 }
             }
+        }
 
-            //            도착지의 위도 경도로 도착지 근처 station의 id를 찾음
-            List<BusResponse.StationResponse> str = buildBusStationUrl(new BusRequest.BusStationRequest().from(req.getDestLatitude(), req.getDestLongtitude()));
-            List<String> destStationIds = new ArrayList<>();
-            for (BusResponse.StationResponse stationResponse : str) {
-                destStationIds.add(stationResponse.getStationId());
-            }
+        System.out.println("routes : " + routes);
+        System.out.println("dest routes " + destRoutesIds);
 
-            System.out.println(destStationIds);
-
-            List<String> destRoutesIds = new ArrayList<>();
-
-            for(int i = 0; i<destStationIds.size(); i++){
-                StringBuilder destBuilderRouteNo = new StringBuilder("http://apis.data.go.kr/1613000/BusSttnInfoInqireService/getSttnThrghRouteList?");
-                String destRouteNo = urlDaeguAppend(destBuilderRouteNo).append("&").append(URLEncoder.encode("nodeid", "UTF-8")).append("=").append(URLEncoder.encode(destStationIds.get(i), "UTF-8")).toString();
-
-                String jResponse = makeStringJsonResponse(destRouteNo);
-                JsonNode jItems = getJsonNodeItems(jResponse);
-
-                if(jItems.isArray()){
-                    for(JsonNode item : items){
-                        String routeid = item.path("routeid").asText();
-
-                        destRoutesIds.add(routeid);
-                    }
-                }
-            }
-
-            System.out.println("routes : " + routes);
-            System.out.println("dest routes " + destRoutesIds);
-
-            Set<String> routesSet = new HashSet<>(routes);
-            routesSet.retainAll(destRoutesIds);
+        Set<String> routesSet = new HashSet<>(routes);
+        routesSet.retainAll(destRoutesIds);
 
 //            출발지에서 도착지까지 공통 노선 번호
-            List<String> commonRoutes = new ArrayList<>(routesSet);
-            System.out.println("Common Routes: " + commonRoutes);
+        List<String> commonRoutes = new ArrayList<>(routesSet);
+        System.out.println("Common Routes: " + commonRoutes);
 
-            return BusResponse.RouteNumList.from(commonRoutes);
-        }
+        return BusResponse.RouteNumList.from(commonRoutes);
+    }
 
-        public List<BusResponse.BusArrivalResonse> getBusArrivalTime(BusRequest.BusArrivalRequest req) throws IOException{
+    public List<BusResponse.BusArrivalResonse> getBusArrivalTime(BusRequest.BusArrivalRequest req) throws IOException {
 
-            List<BusResponse.BusArrivalResonse> ret = new ArrayList<>();
+        List<BusResponse.BusArrivalResonse> ret = new ArrayList<>();
 
-            StringBuilder urlBuilder = new StringBuilder("http://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList?");
-            String finalUrl = urlDaeguAppend(urlBuilder).append("&").append(URLEncoder.encode("nodeId", "UTF-8")).append("=").append(URLEncoder.encode(req.getStationId(), "UTF-8")).toString();
+        StringBuilder urlBuilder = new StringBuilder("http://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList?");
+        String finalUrl = urlDaeguAppend(urlBuilder, 1).append("&").append(URLEncoder.encode("nodeId", "UTF-8")).append("=").append(URLEncoder.encode(req.getStationId(), "UTF-8")).toString();
 
-            String jsonResponse = makeStringJsonResponse(finalUrl);
-            JsonNode items = getJsonNodeItems(jsonResponse);
+        String jsonResponse = makeStringJsonResponse(finalUrl);
+        JsonNode items = getJsonNodeItems(jsonResponse);
 
-            if(items.isArray()){
-                for(JsonNode item : items){
-                    String routeNumber = item.path("routeno").asText();
-                    String routeType = item.path("routetp").asText();
-                    String busType = item.path("vehicletp").asText();
-                    Long numOfStationBeforeArrival= item.path("arrprevstationcnt").asLong();
-                    Long arrivalMin = item.path("arrtime").asLong();
+        if (items.isArray()) {
+            for (JsonNode item : items) {
+                String routeNumber = item.path("routeno").asText();
+                String routeType = item.path("routetp").asText();
+                String busType = item.path("vehicletp").asText();
+                Long numOfStationBeforeArrival = item.path("arrprevstationcnt").asLong();
+                Long arrivalMin = item.path("arrtime").asLong();
 
-                    if(Objects.equals(busType, "저상버스")) {
-                        BusResponse.BusArrivalResonse res = new BusResponse.BusArrivalResonse(routeNumber, routeType, busType, numOfStationBeforeArrival, arrivalMin/60);
-                        ret.add(res);
-                    }
+                if (Objects.equals(busType, "저상버스")) {
+                    BusResponse.BusArrivalResonse res = new BusResponse.BusArrivalResonse(routeNumber, routeType, busType, numOfStationBeforeArrival, arrivalMin / 60);
+                    ret.add(res);
                 }
             }
-            return ret;
         }
+        return ret;
+    }
 
-        public void getBusMovingTime(){}
+    public void getBusMovingTime() {
+    }
 
     public List<BusResponse.BusRouteResponse> getBusRoute(BusRequest.BusRouteRequest req) throws IOException {
 
@@ -242,7 +243,6 @@ public class BusService {
                 String stationName = item.path("nodenm").asText();
                 Long stationNum = item.path("nodeord").asLong();
                 Long upDown = item.path("updowncd").asLong();
-                System.out.println("node id ; " + nodeid);
                 BusResponse.BusRouteResponse bsi = new BusResponse.BusRouteResponse(latitude, longitude, nodeid, stationName, stationNum, upDown);
                 allStations.add(bsi);
             }
@@ -278,11 +278,51 @@ public class BusService {
                 break;
             }
         }
+        return ret;
+    }
 
-        Long stationCount = Math.abs(startStation.getStationNum() - endStation.getStationNum());
+    public BusResponse.busNumStationId getStationXY(BusRequest.BusStationXYRequest req) throws IOException {
+        int pageNo = 1;
+        boolean found = false;
+        BusResponse.busNumStationId ret = null;
 
-        System.out.println(stationCount);
+        while (!found && pageNo <= 10) { // 페이지 번호가 10을 초과하면 루프 종료
+            StringBuilder stringBuilder = new StringBuilder("http://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteAcctoThrghSttnList?");
+            String finalUrl = urlDaeguAppend(stringBuilder, pageNo).append("&").append(URLEncoder.encode("routeId", "UTF-8")).append("=").append(URLEncoder.encode(req.getRouteId(), "UTF-8")).toString();
+
+            System.out.println(finalUrl);
+
+            String jsonResponse = makeStringJsonResponse(finalUrl);
+            JsonNode items = getJsonNodeItems(jsonResponse);
+
+            if (items.isArray()) {
+                for (JsonNode item : items) {
+                    Double gpslati = item.path("gpslati").asDouble();
+                    Double gpslong = item.path("gpslong").asDouble();
+                    String stId = item.path("nodeid").asText();
+
+                    if (stId.equals(req.getStationId())) {
+                        ret = BusResponse.busNumStationId.builder()
+                                .stationId(stId)
+                                .latitude(gpslati)
+                                .longitude(gpslong)
+                                .build();
+
+                        found = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!found) {
+                pageNo++;
+            }
+        }
+
+        if (!found) {
+            System.out.println("Station ID not found within 10 pages.");
+        }
 
         return ret;
     }
-    }
+}
