@@ -38,6 +38,7 @@ public class BusResponse {
     public static class BusRouteResponse{
         private Double latitude;
         private Double longitude;
+        private String nodeid;
         private String stationName;
         private Long stationNum;
         private Long upDown;
@@ -54,4 +55,14 @@ public class BusResponse {
             return new RouteNumList(req);
         }
     }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class BusRouteWithCountResponse {
+        private Long stationCount;
+        private List<BusRouteResponse> routes;
+    }
+
 }

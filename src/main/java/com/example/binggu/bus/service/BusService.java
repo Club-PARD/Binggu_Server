@@ -17,7 +17,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLOutput;
 import java.util.*;
+
+import static java.awt.geom.Point2D.distance;
 
 @Service
 @RequiredArgsConstructor
@@ -67,6 +70,35 @@ public class BusService {
         return rootNode.path("response").path("body").path("items").path("item");
     }
 
+    private BusResponse.BusRouteResponse findClosestStartStation(List<BusResponse.BusRouteResponse> stations, double latitude, double longitude) {
+        BusResponse.BusRouteResponse startStation = stations.get(0); // 초기값: 첫 번째 정류소
+        double minDistance = distance(startStation.getLatitude(), startStation.getLongitude(), latitude, longitude);
+
+        for (BusResponse.BusRouteResponse station : stations) {
+            double currentDistance = distance(station.getLatitude(), station.getLongitude(), latitude, longitude);
+            if (currentDistance < minDistance) {
+                startStation = station;
+                minDistance = currentDistance;
+            }
+        }
+        return startStation;
+    }
+
+    private BusResponse.BusRouteResponse findClosestEndStation(List<BusResponse.BusRouteResponse> stations, double latitude, double longitude) {
+        BusResponse.BusRouteResponse endStation = stations.get(stations.size() - 1); // 초기값: 마지막 정류소
+        double minDistance = distance(endStation.getLatitude(), endStation.getLongitude(), latitude, longitude);
+
+        for (BusResponse.BusRouteResponse station : stations) {
+            double currentDistance = distance(station.getLatitude(), station.getLongitude(), latitude, longitude);
+            if (currentDistance < minDistance) {
+                endStation = station;
+                minDistance = currentDistance;
+            }
+        }
+        return endStation;
+    }
+
+
         public List<BusResponse.StationResponse> buildBusStationUrl(BusRequest.BusStationRequest req) throws IOException {
 
             //            공공데이터 포털에서 받은 Response 중 버스정류장 이름과 Id만 dto로 만들어 프런트에 보내준다
@@ -98,11 +130,11 @@ public class BusService {
         }
 
 //        버스 경로 가져오려면 정류소 Id로 노선 번호를 뽑음, 그걸로 버스 노선 번호(routeid)들을 뽑고, routeid로 정류장 목록조회
-        public BusResponse.RouteNumList getRouteByStationId(String stationId) throws IOException {
+        public BusResponse.RouteNumList getRouteByStationId(BusRequest.RouteNumRequest req) throws IOException {
             List<String> routes = new ArrayList<>();
 
             StringBuilder stringBuilderRouteNo = new StringBuilder("http://apis.data.go.kr/1613000/BusSttnInfoInqireService/getSttnThrghRouteList?");
-            String routeNo = urlDaeguAppend(stringBuilderRouteNo).append("&").append(URLEncoder.encode("nodeid", "UTF-8")).append("=").append(URLEncoder.encode(stationId, "UTF-8")).toString();
+            String routeNo = urlDaeguAppend(stringBuilderRouteNo).append("&").append(URLEncoder.encode("nodeid", "UTF-8")).append("=").append(URLEncoder.encode(req.getStationId(), "UTF-8")).toString();
 
             String jsonResponse = makeStringJsonResponse(routeNo);
             JsonNode items = getJsonNodeItems(jsonResponse);
@@ -114,7 +146,45 @@ public class BusService {
                     routes.add(routeid);
                 }
             }
-            return BusResponse.RouteNumList.from(routes);
+
+            //            도착지의 위도 경도로 도착지 근처 station의 id를 찾음
+            List<BusResponse.StationResponse> str = buildBusStationUrl(new BusRequest.BusStationRequest().from(req.getDestLatitude(), req.getDestLongtitude()));
+            List<String> destStationIds = new ArrayList<>();
+            for (BusResponse.StationResponse stationResponse : str) {
+                destStationIds.add(stationResponse.getStationId());
+            }
+
+            System.out.println(destStationIds);
+
+            List<String> destRoutesIds = new ArrayList<>();
+
+            for(int i = 0; i<destStationIds.size(); i++){
+                StringBuilder destBuilderRouteNo = new StringBuilder("http://apis.data.go.kr/1613000/BusSttnInfoInqireService/getSttnThrghRouteList?");
+                String destRouteNo = urlDaeguAppend(destBuilderRouteNo).append("&").append(URLEncoder.encode("nodeid", "UTF-8")).append("=").append(URLEncoder.encode(destStationIds.get(i), "UTF-8")).toString();
+
+                String jResponse = makeStringJsonResponse(destRouteNo);
+                JsonNode jItems = getJsonNodeItems(jResponse);
+
+                if(jItems.isArray()){
+                    for(JsonNode item : items){
+                        String routeid = item.path("routeid").asText();
+
+                        destRoutesIds.add(routeid);
+                    }
+                }
+            }
+
+            System.out.println("routes : " + routes);
+            System.out.println("dest routes " + destRoutesIds);
+
+            Set<String> routesSet = new HashSet<>(routes);
+            routesSet.retainAll(destRoutesIds);
+
+//            출발지에서 도착지까지 공통 노선 번호
+            List<String> commonRoutes = new ArrayList<>(routesSet);
+            System.out.println("Common Routes: " + commonRoutes);
+
+            return BusResponse.RouteNumList.from(commonRoutes);
         }
 
         public List<BusResponse.BusArrivalResonse> getBusArrivalTime(BusRequest.BusArrivalRequest req) throws IOException{
@@ -146,26 +216,73 @@ public class BusService {
 
         public void getBusMovingTime(){}
 
-        public List<BusResponse.BusRouteResponse> getBusRoute(BusRequest.BusRouteRequest req) throws IOException{
+    public List<BusResponse.BusRouteResponse> getBusRoute(BusRequest.BusRouteRequest req) throws IOException {
 
-            List<BusResponse.BusRouteResponse> ret = new ArrayList<>();
+        List<BusResponse.BusRouteResponse> ret = new ArrayList<>();
 
-            StringBuilder urlBuilder = new StringBuilder("http://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteAcctoThrghSttnList?");
-            String finalUrl = urlDaeguAppend(urlBuilder).append("&").append(URLEncoder.encode("routeId", "UTF-8")).append("=").append(URLEncoder.encode(req.getRouteNum(), "UTF-8")).toString();
-            String jsonResponse = makeStringJsonResponse(finalUrl);
-            JsonNode items = getJsonNodeItems(jsonResponse);
+        StringBuilder urlBuilder = new StringBuilder("http://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteAcctoThrghSttnList?");
+        urlBuilder.append(URLEncoder.encode("serviceKey", "UTF-8")).append("=").append(apiServiceKey);
+        urlBuilder.append("&").append(URLEncoder.encode("pageNo", "UTF-8")).append("=").append(URLEncoder.encode("1", "UTF-8"));
+        urlBuilder.append("&").append(URLEncoder.encode("numOfRows", "UTF-8")).append("=").append(URLEncoder.encode("50", "UTF-8"));
+        urlBuilder.append("&").append(URLEncoder.encode("_type", "UTF-8")).append("=").append(URLEncoder.encode("json", "UTF-8"));
+        urlBuilder.append("&").append(URLEncoder.encode("cityCode", "UTF-8")).append("=").append(URLEncoder.encode("22", "UTF-8"));
+        String finalUrl = urlBuilder.append("&").append(URLEncoder.encode("routeId", "UTF-8")).append("=")
+                .append(URLEncoder.encode(req.getRouteNum(), "UTF-8")).toString();
+        String jsonResponse = makeStringJsonResponse(finalUrl);
 
-            if(items.isArray()){
-                for(JsonNode item : items){
-                    Double latitude = item.path("gpslati").asDouble();
-                    Double longitude = item.path("gpslong").asDouble();
-                    String stationName = item.path("nodenm").asText();
-                    Long stationNum = item.path("nodeord").asLong();
-                    Long upDown = item.path("updowncd").asLong();
-                    BusResponse.BusRouteResponse bsi = new BusResponse.BusRouteResponse(latitude, longitude, stationName,stationNum, upDown);
-                    ret.add(bsi);
-                }
+        JsonNode items = getJsonNodeItems(jsonResponse);
+
+        List<BusResponse.BusRouteResponse> allStations = new ArrayList<>();
+
+        if (items.isArray()) {
+            for (JsonNode item : items) {
+                Double latitude = item.path("gpslati").asDouble();
+                Double longitude = item.path("gpslong").asDouble();
+                String nodeid = item.path("nodeid").asText();
+                String stationName = item.path("nodenm").asText();
+                Long stationNum = item.path("nodeord").asLong();
+                Long upDown = item.path("updowncd").asLong();
+                System.out.println("node id ; " + nodeid);
+                BusResponse.BusRouteResponse bsi = new BusResponse.BusRouteResponse(latitude, longitude, nodeid, stationName, stationNum, upDown);
+                allStations.add(bsi);
             }
-            return ret;
         }
+
+        if (allStations.isEmpty()) {
+            throw new IllegalArgumentException("No stations available");
+        }
+
+        BusResponse.BusRouteResponse startStation = findClosestStartStation(allStations, req.getStartLati(), req.getStartLong());
+        BusResponse.BusRouteResponse endStation = findClosestEndStation(allStations, req.getDestLatitude(), req.getDestLongtitude());
+
+        System.out.println(startStation.getNodeid() + startStation.getStationName());
+        System.out.println(endStation.getNodeid() + endStation.getStationName());
+
+
+        boolean recording = false;
+        boolean startFound = false;
+
+        for (BusResponse.BusRouteResponse station : allStations) {
+            if (station.getNodeid().equals(startStation.getNodeid()) || station.getNodeid().equals(endStation.getNodeid())) {
+                recording = !recording;
+                startFound = true;
+                ret.add(station);
+                continue;
+            }
+
+            if (recording) {
+                ret.add(station);
+            }
+
+            if (startFound && station.getNodeid().equals(endStation.getNodeid())) {
+                break;
+            }
+        }
+
+        Long stationCount = Math.abs(startStation.getStationNum() - endStation.getStationNum());
+
+        System.out.println(stationCount);
+
+        return ret;
+    }
     }

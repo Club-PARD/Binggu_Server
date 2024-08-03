@@ -13,6 +13,10 @@ public class BusRequest {
     public static class BusStationRequest{
         private float latitude; //위도
         private float longtitude; //경도
+
+        public BusStationRequest from(float latitude,float longtitude){
+            return new BusStationRequest(latitude, longtitude);
+        }
     }
 
     @Getter
@@ -21,6 +25,13 @@ public class BusRequest {
     @AllArgsConstructor
     public static class RouteNumRequest{
         private String stationId;
+        private float destLatitude;
+        private float destLongtitude;
+        public RouteNumRequest(String stationId) {
+            this.stationId = stationId;
+            this.destLatitude = 0.0f; // 기본값 설정
+            this.destLongtitude = 0.0f; // 기본값 설정
+        }
     }
 
     @Getter
@@ -31,8 +42,14 @@ public class BusRequest {
         private String stationId;
     }
     @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class BusRouteRequest{
         private String routeNum;
+        private float startLati;
+        private float startLong;
+        private float destLatitude;
+        private float destLongtitude;
     }
 
 
