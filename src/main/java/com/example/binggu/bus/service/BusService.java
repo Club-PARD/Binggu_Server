@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.aspectj.apache.bcel.generic.RET;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -290,8 +291,6 @@ public class BusService {
             StringBuilder stringBuilder = new StringBuilder("http://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteAcctoThrghSttnList?");
             String finalUrl = urlDaeguAppend(stringBuilder, pageNo).append("&").append(URLEncoder.encode("routeId", "UTF-8")).append("=").append(URLEncoder.encode(req.getRouteId(), "UTF-8")).toString();
 
-            System.out.println(finalUrl);
-
             String jsonResponse = makeStringJsonResponse(finalUrl);
             JsonNode items = getJsonNodeItems(jsonResponse);
 
@@ -322,6 +321,20 @@ public class BusService {
         if (!found) {
             System.out.println("Station ID not found within 10 pages.");
         }
+        return ret;
+    }
+    public BusResponse.busNum getBusNum(BusRequest.BusNumRequest req) throws IOException {
+        BusResponse.busNum ret = null;
+        StringBuilder stringBuilder = new StringBuilder("http://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteInfoIem?");
+        String finalUrl = urlDaeguAppend(stringBuilder,1).append("&").append(URLEncoder.encode("routeId", "UTF-8")).append("=").append(URLEncoder.encode(req.getRouteId(), "UTF-8")).toString();
+
+        String jsonResponse = makeStringJsonResponse(finalUrl);
+        JsonNode items = getJsonNodeItems(jsonResponse);
+
+        String busNum = items.path("routeno").asText();
+        String num = busNum.replaceAll("\\[.*?\\]", "").trim();
+        ret = BusResponse.busNum.from(num);
+
 
         return ret;
     }

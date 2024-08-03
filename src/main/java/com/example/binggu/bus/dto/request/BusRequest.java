@@ -62,5 +62,10 @@ public class BusRequest {
         private float destLongtitude;
     }
 
+    @Getter
+    public static class BusNumRequest{
+        private String routeId;
+    }
+
 
 }

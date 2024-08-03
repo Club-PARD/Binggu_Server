@@ -65,6 +65,16 @@ public class BusResponse {
         private Double latitude;
         private Double longitude;
     }
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class busNum{
+        private String busNum;
 
+        public static busNum from(String busNum){
+            return new busNum(busNum);
+        }
+    }
 
 }
