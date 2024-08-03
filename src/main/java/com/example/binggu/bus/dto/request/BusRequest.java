@@ -19,7 +19,21 @@ public class BusRequest {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    public static class RouteNumRequest{
+        private String stationId;
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class BusArrivalRequest{
         private String stationId;
     }
+    @Getter
+    public static class BusRouteRequest{
+        private String routeNum;
+    }
+
+
 }
