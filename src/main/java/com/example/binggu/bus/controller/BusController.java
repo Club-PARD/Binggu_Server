@@ -44,7 +44,9 @@ public class BusController {
     @PostMapping("/routeNum")
     @Operation(description = "stationId로 정류장의 노선번호들 가져오기")
     public ResponseEntity<BusResponse.RouteNumList> getRouteNum(@RequestBody BusRequest.RouteNumRequest req) throws IOException {
-       BusResponse.RouteNumList res = busService.getRouteByStationId(req.getStationId());
+       BusResponse.RouteNumList res = busService.getRouteByStationId(req);
         return ResponseEntity.ok().body(res);
     }
+
+
 }
