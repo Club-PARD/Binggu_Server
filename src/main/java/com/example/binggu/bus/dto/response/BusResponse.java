@@ -60,9 +60,11 @@ public class BusResponse {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class BusRouteWithCountResponse {
-        private Long stationCount;
-        private List<BusRouteResponse> routes;
+    public static class busNumStationId{
+        private String stationId;
+        private Double latitude;
+        private Double longitude;
     }
+
 
 }

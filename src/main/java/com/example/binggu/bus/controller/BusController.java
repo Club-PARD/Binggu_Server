@@ -47,6 +47,10 @@ public class BusController {
        BusResponse.RouteNumList res = busService.getRouteByStationId(req);
         return ResponseEntity.ok().body(res);
     }
-
+    @PostMapping("/stationXY")
+    public ResponseEntity<BusResponse.busNumStationId> getStationXY(@RequestBody BusRequest.BusStationXYRequest req) throws IOException{
+        BusResponse.busNumStationId res = busService.getStationXY(req);
+        return ResponseEntity.ok().body(res);
+    }
 
 }

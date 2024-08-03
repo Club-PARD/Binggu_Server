@@ -41,6 +41,16 @@ public class BusRequest {
     public static class BusArrivalRequest{
         private String stationId;
     }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class BusStationXYRequest{
+        private String stationId;
+        private String routeId;
+    }
+
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
