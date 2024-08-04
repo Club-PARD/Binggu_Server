@@ -31,5 +31,6 @@ public class UserRequest {
     public static class AddRoutes{
         private Long routeId;
         private Route route;
+        private String busNum;
     }
 }

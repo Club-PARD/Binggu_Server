@@ -2,6 +2,8 @@ package com.example.binggu.bus.service;
 
 import com.example.binggu.bus.dto.request.BusRequest;
 import com.example.binggu.bus.dto.response.BusResponse;
+import com.example.binggu.exception.CommonException;
+import com.example.binggu.exception.ExceptionCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,7 +36,7 @@ public class BusService {
         StringBuilder urlBuilder = new StringBuilder(url);
         urlBuilder.append(URLEncoder.encode("serviceKey", "UTF-8")).append("=").append(apiServiceKey);
         urlBuilder.append("&").append(URLEncoder.encode("pageNo", "UTF-8")).append("=").append(URLEncoder.encode(String.valueOf(pageNo), "UTF-8"));
-        urlBuilder.append("&").append(URLEncoder.encode("numOfRows", "UTF-8")).append("=").append(URLEncoder.encode("10", "UTF-8"));
+        urlBuilder.append("&").append(URLEncoder.encode("numOfRows", "UTF-8")).append("=").append(URLEncoder.encode("20", "UTF-8"));
         urlBuilder.append("&").append(URLEncoder.encode("_type", "UTF-8")).append("=").append(URLEncoder.encode("json", "UTF-8"));
         urlBuilder.append("&").append(URLEncoder.encode("cityCode", "UTF-8")).append("=").append(URLEncoder.encode("22", "UTF-8"));
 
@@ -225,7 +227,7 @@ public class BusService {
         StringBuilder urlBuilder = new StringBuilder("http://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteAcctoThrghSttnList?");
         urlBuilder.append(URLEncoder.encode("serviceKey", "UTF-8")).append("=").append(apiServiceKey);
         urlBuilder.append("&").append(URLEncoder.encode("pageNo", "UTF-8")).append("=").append(URLEncoder.encode("1", "UTF-8"));
-        urlBuilder.append("&").append(URLEncoder.encode("numOfRows", "UTF-8")).append("=").append(URLEncoder.encode("50", "UTF-8"));
+        urlBuilder.append("&").append(URLEncoder.encode("numOfRows", "UTF-8")).append("=").append(URLEncoder.encode("100", "UTF-8"));
         urlBuilder.append("&").append(URLEncoder.encode("_type", "UTF-8")).append("=").append(URLEncoder.encode("json", "UTF-8"));
         urlBuilder.append("&").append(URLEncoder.encode("cityCode", "UTF-8")).append("=").append(URLEncoder.encode("22", "UTF-8"));
         String finalUrl = urlBuilder.append("&").append(URLEncoder.encode("routeId", "UTF-8")).append("=")
@@ -318,8 +320,9 @@ public class BusService {
             }
         }
 
-        if (!found) {
-            System.out.println("Station ID not found within 10 pages.");
+        //        경로중에 출발지와 도착지가 없으면 StartFound는 False
+        if(!found){
+            throw new CommonException(ExceptionCode.STATION_NOT_EXIST);
         }
         return ret;
     }
