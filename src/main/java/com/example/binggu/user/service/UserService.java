@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 @Service
@@ -36,4 +37,24 @@ public class UserService {
         u.addRoute(req.getRouteId(),req.getRoute());
         userRepo.save(u);
     }
+
+    @Transactional
+    public void deleteRoute(Long userId, String busId) {
+        User user = userRepo.findById(userId).orElseThrow(() -> new CommonException(ExceptionCode.USER_NOT_FOUND));
+
+        Long routeIdToDelete;
+        try {
+            routeIdToDelete = Long.parseLong(busId);
+        } catch (NumberFormatException e) {
+            throw new CommonException(ExceptionCode.INVALID_ROUTE_ID);
+        }
+
+        if (user.getRoutes().containsKey(routeIdToDelete)) {
+            user.getRoutes().remove(routeIdToDelete);
+            userRepo.save(user);
+        } else {
+            throw new CommonException(ExceptionCode.FAVORITE_ROUTE_NOT_FOUND);
+        }
+    }
+
 }

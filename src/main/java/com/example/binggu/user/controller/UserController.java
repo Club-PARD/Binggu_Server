@@ -30,4 +30,8 @@ public class UserController {
     public void addRoutes(@PathVariable Long id,@RequestBody UserRequest.AddRoutes req){
         userService.addRoute(id,req);
     }
+    @DeleteMapping("/{id}/{busId}")
+    public void deleteRoutes(@PathVariable Long id, @PathVariable String busId){
+        userService.deleteRoute(id,busId);
+    }
 }
