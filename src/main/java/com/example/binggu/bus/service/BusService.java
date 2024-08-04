@@ -2,6 +2,8 @@ package com.example.binggu.bus.service;
 
 import com.example.binggu.bus.dto.request.BusRequest;
 import com.example.binggu.bus.dto.response.BusResponse;
+import com.example.binggu.exception.CommonException;
+import com.example.binggu.exception.ExceptionCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -108,10 +110,11 @@ public class BusService {
         String urlBuilder = "http://apis.data.go.kr/1613000/BusSttnInfoInqireService/getCrdntPrxmtSttnList?" +
                 URLEncoder.encode("serviceKey", "UTF-8") + "=" + apiServiceKey +
                 "&" + URLEncoder.encode("pageNo", StandardCharsets.UTF_8) + "=" + URLEncoder.encode("1", StandardCharsets.UTF_8) +
-                "&" + URLEncoder.encode("numOfRows", "UTF-8") + "=" + URLEncoder.encode("10", "UTF-8") + /*한 페이지 결과 수*/
+                "&" + URLEncoder.encode("numOfRows", "UTF-8") + "=" + URLEncoder.encode("20", "UTF-8") + /*한 페이지 결과 수*/
                 "&" + URLEncoder.encode("_type", "UTF-8") + "=" + URLEncoder.encode("json", "UTF-8") + /*데이터 타입(xml, json)*/
                 "&" + URLEncoder.encode("gpsLati", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(req.getLatitude()), "UTF-8") + /*WGS84 위도 좌표*/
                 "&" + URLEncoder.encode("gpsLong", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(req.getLongtitude()), "UTF-8");
+        System.out.println(urlBuilder);
 
         String jsonRouteNum = makeStringJsonResponse(urlBuilder);
         JsonNode items = getJsonNodeItems(jsonRouteNum);
@@ -192,6 +195,8 @@ public class BusService {
 
         List<BusResponse.BusArrivalResonse> ret = new ArrayList<>();
 
+
+
         StringBuilder urlBuilder = new StringBuilder("http://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList?");
         String finalUrl = urlDaeguAppend(urlBuilder, 1).append("&").append(URLEncoder.encode("nodeId", "UTF-8")).append("=").append(URLEncoder.encode(req.getStationId(), "UTF-8")).toString();
 
@@ -212,6 +217,8 @@ public class BusService {
                 }
             }
         }
+
+
         return ret;
     }
 
@@ -221,20 +228,18 @@ public class BusService {
     public List<BusResponse.BusRouteResponse> getBusRoute(BusRequest.BusRouteRequest req) throws IOException {
 
         List<BusResponse.BusRouteResponse> ret = new ArrayList<>();
+        List<BusResponse.BusRouteResponse> allStations = new ArrayList<>();
 
         StringBuilder urlBuilder = new StringBuilder("http://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteAcctoThrghSttnList?");
         urlBuilder.append(URLEncoder.encode("serviceKey", "UTF-8")).append("=").append(apiServiceKey);
         urlBuilder.append("&").append(URLEncoder.encode("pageNo", "UTF-8")).append("=").append(URLEncoder.encode("1", "UTF-8"));
-        urlBuilder.append("&").append(URLEncoder.encode("numOfRows", "UTF-8")).append("=").append(URLEncoder.encode("50", "UTF-8"));
+        urlBuilder.append("&").append(URLEncoder.encode("numOfRows", "UTF-8")).append("=").append(URLEncoder.encode("100", "UTF-8"));
         urlBuilder.append("&").append(URLEncoder.encode("_type", "UTF-8")).append("=").append(URLEncoder.encode("json", "UTF-8"));
         urlBuilder.append("&").append(URLEncoder.encode("cityCode", "UTF-8")).append("=").append(URLEncoder.encode("22", "UTF-8"));
-        String finalUrl = urlBuilder.append("&").append(URLEncoder.encode("routeId", "UTF-8")).append("=")
-                .append(URLEncoder.encode(req.getRouteNum(), "UTF-8")).toString();
+        String finalUrl = urlBuilder.append("&").append(URLEncoder.encode("routeId", "UTF-8")).append("=").append(URLEncoder.encode(req.getRouteNum(), "UTF-8")).toString();
+
         String jsonResponse = makeStringJsonResponse(finalUrl);
-
         JsonNode items = getJsonNodeItems(jsonResponse);
-
-        List<BusResponse.BusRouteResponse> allStations = new ArrayList<>();
 
         if (items.isArray()) {
             for (JsonNode item : items) {
@@ -250,7 +255,7 @@ public class BusService {
         }
 
         if (allStations.isEmpty()) {
-            throw new IllegalArgumentException("No stations available");
+            throw new CommonException(ExceptionCode.Route_NOT_FOUND);
         }
 
         BusResponse.BusRouteResponse startStation = findClosestStartStation(allStations, req.getStartLati(), req.getStartLong());
@@ -263,8 +268,10 @@ public class BusService {
         boolean recording = false;
         boolean startFound = false;
 
+//        경로에 있는 모든 정류장 중 출발정류장~도착 정류장을 프런트에게 돌려준다.
         for (BusResponse.BusRouteResponse station : allStations) {
-            if (station.getNodeid().equals(startStation.getNodeid()) || station.getNodeid().equals(endStation.getNodeid())) {
+
+            if (station.getNodeid().trim().intern().equals(startStation.getNodeid().trim().intern())) {
                 recording = !recording;
                 startFound = true;
                 ret.add(station);
@@ -275,9 +282,13 @@ public class BusService {
                 ret.add(station);
             }
 
-            if (startFound && station.getNodeid().equals(endStation.getNodeid())) {
+            if (startFound && station.getNodeid().trim().intern().equals(endStation.getNodeid().trim().intern())) {
                 break;
             }
+        }
+//        경로중에 출발지와 도착지가 없으면 StartFound는 False
+        if(!startFound){
+            throw new CommonException(ExceptionCode.STATION_NOT_EXIST);
         }
         return ret;
     }
@@ -328,10 +339,12 @@ public class BusService {
         StringBuilder stringBuilder = new StringBuilder("http://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteInfoIem?");
         String finalUrl = urlDaeguAppend(stringBuilder,1).append("&").append(URLEncoder.encode("routeId", "UTF-8")).append("=").append(URLEncoder.encode(req.getRouteId(), "UTF-8")).toString();
 
+        System.out.println(finalUrl);
         String jsonResponse = makeStringJsonResponse(finalUrl);
         JsonNode items = getJsonNodeItems(jsonResponse);
 
         String busNum = items.path("routeno").asText();
+        System.out.println(busNum);
         String num = busNum.replaceAll("\\[.*?\\]", "").trim();
         ret = BusResponse.busNum.from(num);
 
