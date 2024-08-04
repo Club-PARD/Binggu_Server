@@ -189,10 +189,9 @@ public class BusService {
 
         List<BusResponse.BusArrivalResonse> ret = new ArrayList<>();
 
-
-
-        StringBuilder urlBuilder = new StringBuilder("http://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList?");
-        String finalUrl = urlDaeguAppend(urlBuilder, 1).append("&").append(URLEncoder.encode("nodeId", "UTF-8")).append("=").append(URLEncoder.encode(req.getStationId(), "UTF-8")).toString();
+        StringBuilder urlBuilder = new StringBuilder("http://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoSpcifyRouteBusArvlPrearngeInfoList?");
+        String finalUrl = urlDaeguAppend(urlBuilder, 1).append("&").append(URLEncoder.encode("nodeId", "UTF-8")).append("=").append(URLEncoder.encode(req.getStationId(), "UTF-8"))
+                .append("&").append(URLEncoder.encode("routeId","UTF-8")).append("=").append(URLEncoder.encode(req.getRouteId(),"UTF-8")).toString();
 
         String jsonResponse = makeStringJsonResponse(finalUrl);
         JsonNode items = getJsonNodeItems(jsonResponse);

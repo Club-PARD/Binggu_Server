@@ -49,11 +49,12 @@ public class UserService {
             throw new CommonException(ExceptionCode.INVALID_ROUTE_ID);
         }
 
-        if (user.getRoutes().containsKey(routeIdToDelete)) {
-            user.getRoutes().remove(routeIdToDelete);
+        Route removedRoute = user.getRoutes().remove(routeIdToDelete);
+
+        if (removedRoute != null) {
             userRepo.save(user);
         } else {
-            throw new CommonException(ExceptionCode.FAVORITE_ROUTE_NOT_FOUND);
+            throw new CommonException(ExceptionCode.INVALID_ROUTE_ID);
         }
     }
 
