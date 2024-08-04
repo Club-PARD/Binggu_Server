@@ -18,5 +18,4 @@ import java.util.List;
 public class Route {
     @Convert(converter = ListStringConverter.class)
     private List<String> route;
-    private String busNum;
 }

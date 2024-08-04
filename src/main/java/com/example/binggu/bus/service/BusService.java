@@ -110,7 +110,7 @@ public class BusService {
         String urlBuilder = "http://apis.data.go.kr/1613000/BusSttnInfoInqireService/getCrdntPrxmtSttnList?" +
                 URLEncoder.encode("serviceKey", "UTF-8") + "=" + apiServiceKey +
                 "&" + URLEncoder.encode("pageNo", StandardCharsets.UTF_8) + "=" + URLEncoder.encode("1", StandardCharsets.UTF_8) +
-                "&" + URLEncoder.encode("numOfRows", "UTF-8") + "=" + URLEncoder.encode("10", "UTF-8") + /*한 페이지 결과 수*/
+                "&" + URLEncoder.encode("numOfRows", "UTF-8") + "=" + URLEncoder.encode("20", "UTF-8") + /*한 페이지 결과 수*/
                 "&" + URLEncoder.encode("_type", "UTF-8") + "=" + URLEncoder.encode("json", "UTF-8") + /*데이터 타입(xml, json)*/
                 "&" + URLEncoder.encode("gpsLati", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(req.getLatitude()), "UTF-8") + /*WGS84 위도 좌표*/
                 "&" + URLEncoder.encode("gpsLong", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(req.getLongtitude()), "UTF-8");
@@ -157,7 +157,6 @@ public class BusService {
             destStationIds.add(stationResponse.getStationId());
         }
 
-        System.out.println(destStationIds);
 
         List<String> destRoutesIds = new ArrayList<>();
 
@@ -177,15 +176,11 @@ public class BusService {
             }
         }
 
-        System.out.println("routes : " + routes);
-        System.out.println("dest routes " + destRoutesIds);
-
         Set<String> routesSet = new HashSet<>(routes);
         routesSet.retainAll(destRoutesIds);
 
 //            출발지에서 도착지까지 공통 노선 번호
         List<String> commonRoutes = new ArrayList<>(routesSet);
-        System.out.println("Common Routes: " + commonRoutes);
 
         return BusResponse.RouteNumList.from(commonRoutes);
     }
@@ -193,6 +188,8 @@ public class BusService {
     public List<BusResponse.BusArrivalResonse> getBusArrivalTime(BusRequest.BusArrivalRequest req) throws IOException {
 
         List<BusResponse.BusArrivalResonse> ret = new ArrayList<>();
+
+
 
         StringBuilder urlBuilder = new StringBuilder("http://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList?");
         String finalUrl = urlDaeguAppend(urlBuilder, 1).append("&").append(URLEncoder.encode("nodeId", "UTF-8")).append("=").append(URLEncoder.encode(req.getStationId(), "UTF-8")).toString();
@@ -214,6 +211,8 @@ public class BusService {
                 }
             }
         }
+
+
         return ret;
     }
 
@@ -223,6 +222,7 @@ public class BusService {
     public List<BusResponse.BusRouteResponse> getBusRoute(BusRequest.BusRouteRequest req) throws IOException {
 
         List<BusResponse.BusRouteResponse> ret = new ArrayList<>();
+        List<BusResponse.BusRouteResponse> allStations = new ArrayList<>();
 
         StringBuilder urlBuilder = new StringBuilder("http://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteAcctoThrghSttnList?");
         urlBuilder.append(URLEncoder.encode("serviceKey", "UTF-8")).append("=").append(apiServiceKey);
@@ -230,13 +230,10 @@ public class BusService {
         urlBuilder.append("&").append(URLEncoder.encode("numOfRows", "UTF-8")).append("=").append(URLEncoder.encode("100", "UTF-8"));
         urlBuilder.append("&").append(URLEncoder.encode("_type", "UTF-8")).append("=").append(URLEncoder.encode("json", "UTF-8"));
         urlBuilder.append("&").append(URLEncoder.encode("cityCode", "UTF-8")).append("=").append(URLEncoder.encode("22", "UTF-8"));
-        String finalUrl = urlBuilder.append("&").append(URLEncoder.encode("routeId", "UTF-8")).append("=")
-                .append(URLEncoder.encode(req.getRouteNum(), "UTF-8")).toString();
+        String finalUrl = urlBuilder.append("&").append(URLEncoder.encode("routeId", "UTF-8")).append("=").append(URLEncoder.encode(req.getRouteNum(), "UTF-8")).toString();
+
         String jsonResponse = makeStringJsonResponse(finalUrl);
-
         JsonNode items = getJsonNodeItems(jsonResponse);
-
-        List<BusResponse.BusRouteResponse> allStations = new ArrayList<>();
 
         if (items.isArray()) {
             for (JsonNode item : items) {
@@ -252,22 +249,19 @@ public class BusService {
         }
 
         if (allStations.isEmpty()) {
-            throw new IllegalArgumentException("No stations available");
+            throw new CommonException(ExceptionCode.Route_NOT_FOUND);
         }
 
         BusResponse.BusRouteResponse startStation = findClosestStartStation(allStations, req.getStartLati(), req.getStartLong());
         BusResponse.BusRouteResponse endStation = findClosestEndStation(allStations, req.getDestLatitude(), req.getDestLongtitude());
 
-        System.out.println(startStation.getNodeid() + startStation.getStationName());
-        System.out.println(endStation.getNodeid() + endStation.getStationName());
-
-
         boolean recording = false;
         boolean startFound = false;
 
+        // 경로에 있는 모든 정류장 중 출발정류장~도착 정류장을 프런트에게 돌려준다.
         for (BusResponse.BusRouteResponse station : allStations) {
-            if (station.getNodeid().equals(startStation.getNodeid()) || station.getNodeid().equals(endStation.getNodeid())) {
-                recording = !recording;
+            if(station.getNodeid().trim().intern().equals(startStation.getNodeid().trim().intern())) {
+                recording = true;
                 startFound = true;
                 ret.add(station);
                 continue;
@@ -277,9 +271,15 @@ public class BusService {
                 ret.add(station);
             }
 
-            if (startFound && station.getNodeid().equals(endStation.getNodeid())) {
+            if (startFound && station.getNodeid().trim().intern().equals(endStation.getNodeid().trim().intern())){
+                ret.add(station);
                 break;
             }
+        }
+
+//        경로중에 출발지와 도착지가 없으면 StartFound는 False
+        if(!startFound){
+            throw new CommonException(ExceptionCode.STATION_NOT_EXIST);
         }
         return ret;
     }
