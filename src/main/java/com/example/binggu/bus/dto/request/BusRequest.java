@@ -66,8 +66,12 @@ public class BusRequest {
     }
 
     @Getter
+    @AllArgsConstructor
     public static class BusNumRequest{
         private String routeId;
+        public static BusNumRequest of(String routeId){
+            return new BusNumRequest(routeId);
+        }
     }
 
 

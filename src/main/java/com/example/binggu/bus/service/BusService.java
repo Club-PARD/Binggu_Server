@@ -206,15 +206,15 @@ public class BusService {
 
                 if (Objects.equals(busType, "저상버스")) {
                     ret = new BusResponse.BusArrivalResonse(routeNumber, routeType, busType, numOfStationBeforeArrival, arrivalMin / 60);
+                    break;
                 }
             }
         }
-
+        if(ret==null){
+            throw new CommonException(ExceptionCode.NO_BUS_COMMING);
+        }
 
         return ret;
-    }
-
-    public void getBusMovingTime() {
     }
 
     public List<BusResponse.BusRouteResponse> getBusRoute(BusRequest.BusRouteRequest req) throws IOException {
@@ -335,7 +335,6 @@ public class BusService {
         String busNum = items.path("routeno").asText();
         String num = busNum.replaceAll("\\[.*?\\]", "").trim();
         ret = BusResponse.busNum.from(num);
-
 
         return ret;
     }
