@@ -77,4 +77,16 @@ public class BusResponse {
         }
     }
 
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class arrivalMinResponse{
+        private Long arrivalMin;
+
+        public static arrivalMinResponse from(Long arrivalMin){
+            return new arrivalMinResponse(arrivalMin);
+        }
+    }
+
 }
