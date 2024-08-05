@@ -56,9 +56,4 @@ public class BusController {
         return ResponseEntity.ok().body(res);
     }
 
-    @PostMapping("/numWithStation")
-    public void getBusNumWithStationNames(){
-
-    }
-
 }

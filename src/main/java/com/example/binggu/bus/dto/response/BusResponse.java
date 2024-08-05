@@ -81,12 +81,10 @@ public class BusResponse {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class arrivalMinResponse{
-        private Long arrivalMin;
-
-        public static arrivalMinResponse from(Long arrivalMin){
-            return new arrivalMinResponse(arrivalMin);
-        }
+    public static class BusNumWithStationNamesResponse{
+        private String busBum;
+        private String startStationName;
+        private String endStationName;
     }
 
 }
