@@ -26,8 +26,8 @@ public class BusController {
 
     @PostMapping("/arrivalTime")
     @Operation(description = "stationId로 정류장까지 도착시간 가져오기")
-    public ResponseEntity<List<BusResponse.BusArrivalResonse>> getBusArrivalTime(@RequestBody BusRequest.BusArrivalRequest req) throws IOException{
-        List<BusResponse.BusArrivalResonse> res = busService.getBusArrivalTime(req);
+    public ResponseEntity<BusResponse.BusArrivalResonse> getBusArrivalTime(@RequestBody BusRequest.BusArrivalRequest req) throws IOException{
+        BusResponse.BusArrivalResonse res = busService.getBusArrivalTime(req);
         return ResponseEntity.ok().body(res);
     }
 
@@ -54,6 +54,11 @@ public class BusController {
     public ResponseEntity<BusResponse.busNum> getBusNum(@RequestBody BusRequest.BusNumRequest req) throws IOException {
         BusResponse.busNum res = busService.getBusNum(req);
         return ResponseEntity.ok().body(res);
+    }
+
+    @PostMapping("/numWithStation")
+    public void getBusNumWithStationNames(){
+
     }
 
 }

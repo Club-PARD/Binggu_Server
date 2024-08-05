@@ -185,9 +185,9 @@ public class BusService {
         return BusResponse.RouteNumList.from(commonRoutes);
     }
 
-    public List<BusResponse.BusArrivalResonse> getBusArrivalTime(BusRequest.BusArrivalRequest req) throws IOException {
+    public BusResponse.BusArrivalResonse getBusArrivalTime(BusRequest.BusArrivalRequest req) throws IOException {
 
-        List<BusResponse.BusArrivalResonse> ret = new ArrayList<>();
+        BusResponse.BusArrivalResonse ret = null;
 
         StringBuilder urlBuilder = new StringBuilder("http://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoSpcifyRouteBusArvlPrearngeInfoList?");
         String finalUrl = urlDaeguAppend(urlBuilder, 1).append("&").append(URLEncoder.encode("nodeId", "UTF-8")).append("=").append(URLEncoder.encode(req.getStationId(), "UTF-8"))
@@ -205,8 +205,7 @@ public class BusService {
                 Long arrivalMin = item.path("arrtime").asLong();
 
                 if (Objects.equals(busType, "저상버스")) {
-                    BusResponse.BusArrivalResonse res = new BusResponse.BusArrivalResonse(routeNumber, routeType, busType, numOfStationBeforeArrival, arrivalMin / 60);
-                    ret.add(res);
+                    ret = new BusResponse.BusArrivalResonse(routeNumber, routeType, busType, numOfStationBeforeArrival, arrivalMin / 60);
                 }
             }
         }
