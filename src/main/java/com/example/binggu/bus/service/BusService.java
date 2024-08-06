@@ -330,9 +330,11 @@ public class BusService {
         BusResponse.busNum ret = null;
         StringBuilder stringBuilder = new StringBuilder("http://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteInfoIem?");
         String finalUrl = urlDaeguAppend(stringBuilder,1).append("&").append(URLEncoder.encode("routeId", "UTF-8")).append("=").append(URLEncoder.encode(req.getRouteId(), "UTF-8")).toString();
+        System.out.println(finalUrl);
 
         String jsonResponse = makeStringJsonResponse(finalUrl);
         JsonNode items = getJsonNodeItems(jsonResponse);
+        System.out.println(items);
 
         String busNum = items.path("routeno").asText();
         String num = busNum.replaceAll("\\[.*?\\]", "").trim();

@@ -66,6 +66,7 @@ public class BusRequest {
     }
 
     @Getter
+    @NoArgsConstructor
     @AllArgsConstructor
     public static class BusNumRequest{
         private String routeId;
