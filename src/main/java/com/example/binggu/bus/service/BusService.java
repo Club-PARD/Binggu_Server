@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.aspectj.apache.bcel.generic.RET;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +19,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.sql.SQLOutput;
 import java.util.*;
 
 import static java.awt.geom.Point2D.distance;
@@ -195,6 +193,10 @@ public class BusService {
 
         String jsonResponse = makeStringJsonResponse(finalUrl);
         JsonNode items = getJsonNodeItems(jsonResponse);
+
+        if(items.isEmpty()){
+            throw new CommonException(ExceptionCode.NO_BUS_COMMING);
+        }
 
         if (items.isArray()) {
             for (JsonNode item : items) {
