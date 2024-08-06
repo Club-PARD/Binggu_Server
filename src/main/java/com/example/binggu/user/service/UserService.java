@@ -58,4 +58,22 @@ public class UserService {
         }
     }
 
+    public UserResponsse.BusFavoriteRegistered isBusRegistered(Long userId, String routeId) {
+        User u = userRepo.findById(userId)
+                .orElseThrow(() -> new CommonException(ExceptionCode.USER_NOT_FOUND));
+
+        Long routeIdLong;
+        try {
+            routeIdLong = Long.parseLong(routeId);
+        } catch (NumberFormatException e) {
+            throw new CommonException(ExceptionCode.FAVORITE_ROUTE_NOT_FOUND);
+        }
+
+        if (u.getRoutes().containsKey(routeIdLong)) {
+            return UserResponsse.BusFavoriteRegistered.from(true);
+        }
+
+        return UserResponsse.BusFavoriteRegistered.from(false);
+    }
+
 }
