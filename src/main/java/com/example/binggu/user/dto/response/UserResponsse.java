@@ -2,8 +2,7 @@ package com.example.binggu.user.dto.response;
 
 import com.example.binggu.user.entity.Route;
 import com.example.binggu.user.entity.User;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 import java.util.List;
 import java.util.Map;
@@ -32,6 +31,18 @@ public class UserResponsse {
         public static UserCreateRes from(Long numOfUser){
             return UserCreateRes.builder()
                     .id(numOfUser).build();
+        }
+    }
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Setter
+    public static class BusFavoriteRegistered{
+        private Boolean register;
+
+        public static BusFavoriteRegistered from(boolean req){
+            return new BusFavoriteRegistered(req);
         }
     }
 }
