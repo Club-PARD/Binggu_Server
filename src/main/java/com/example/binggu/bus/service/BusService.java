@@ -30,6 +30,7 @@ public class BusService {
     @Value("${api.service.key}")
     private String apiServiceKey;
 
+//    대구 버스 정보 데이타 받아오는 url 만드는 method
     private StringBuilder urlDaeguAppend(StringBuilder url, int pageNo) throws UnsupportedEncodingException {
         StringBuilder urlBuilder = new StringBuilder(url);
         urlBuilder.append(URLEncoder.encode("serviceKey", "UTF-8")).append("=").append(apiServiceKey);
@@ -40,6 +41,8 @@ public class BusService {
 
         return urlBuilder;
     }
+
+//    url로 json값 받아오기
 
     public String makeStringJsonResponse(String finalUrl) throws IOException {
         URL url = new URL(finalUrl);
@@ -65,12 +68,14 @@ public class BusService {
         return jsonResponse;
     }
 
+//    json값중 item에 들어있는 값만 가져오기
     public JsonNode getJsonNodeItems(String jsonResponse) throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = objectMapper.readTree(jsonResponse);
         return rootNode.path("response").path("body").path("items").path("item");
     }
 
+//    출발지의  위도경도와 제일 가까운 정류장 찾기
     private BusResponse.BusRouteResponse findClosestStartStation(List<BusResponse.BusRouteResponse> stations, double latitude, double longitude) {
         BusResponse.BusRouteResponse startStation = stations.get(0); // 초기값: 첫 번째 정류소
         double minDistance = distance(startStation.getLatitude(), startStation.getLongitude(), latitude, longitude);
@@ -85,6 +90,7 @@ public class BusService {
         return startStation;
     }
 
+//    도착지의 위도경도와 제일 가까운 정류장 찾기
     private BusResponse.BusRouteResponse findClosestEndStation(List<BusResponse.BusRouteResponse> stations, double latitude, double longitude) {
         BusResponse.BusRouteResponse endStation = stations.get(stations.size() - 1); // 초기값: 마지막 정류소
         double minDistance = distance(endStation.getLatitude(), endStation.getLongitude(), latitude, longitude);
@@ -99,7 +105,7 @@ public class BusService {
         return endStation;
     }
 
-
+// 출발자의 위도경도 500M안에 있는 정류장 리스트 돌려주는 메서드
     public List<BusResponse.StationResponse> buildBusStationUrl(BusRequest.BusStationRequest req) throws IOException {
 
         //            공공데이터 포털에서 받은 Response 중 버스정류장 이름과 Id만 dto로 만들어 프런트에 보내준다
@@ -108,9 +114,9 @@ public class BusService {
         String urlBuilder = "http://apis.data.go.kr/1613000/BusSttnInfoInqireService/getCrdntPrxmtSttnList?" +
                 URLEncoder.encode("serviceKey", "UTF-8") + "=" + apiServiceKey +
                 "&" + URLEncoder.encode("pageNo", StandardCharsets.UTF_8) + "=" + URLEncoder.encode("1", StandardCharsets.UTF_8) +
-                "&" + URLEncoder.encode("numOfRows", "UTF-8") + "=" + URLEncoder.encode("20", "UTF-8") + /*한 페이지 결과 수*/
-                "&" + URLEncoder.encode("_type", "UTF-8") + "=" + URLEncoder.encode("json", "UTF-8") + /*데이터 타입(xml, json)*/
-                "&" + URLEncoder.encode("gpsLati", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(req.getLatitude()), "UTF-8") + /*WGS84 위도 좌표*/
+                "&" + URLEncoder.encode("numOfRows", "UTF-8") + "=" + URLEncoder.encode("20", "UTF-8") +
+                "&" + URLEncoder.encode("_type", "UTF-8") + "=" + URLEncoder.encode("json", "UTF-8") +
+                "&" + URLEncoder.encode("gpsLati", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(req.getLatitude()), "UTF-8") +
                 "&" + URLEncoder.encode("gpsLong", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(req.getLongtitude()), "UTF-8");
 
         String jsonRouteNum = makeStringJsonResponse(urlBuilder);
@@ -126,7 +132,6 @@ public class BusService {
                 nodeInfoList.add(nodeInfoDto);
             }
         }
-
         return nodeInfoList;
     }
 
@@ -143,7 +148,6 @@ public class BusService {
         if (items.isArray()) {
             for (JsonNode item : items) {
                 String routeid = item.path("routeid").asText();
-
                 routes.add(routeid);
             }
         }
@@ -154,7 +158,6 @@ public class BusService {
         for (BusResponse.StationResponse stationResponse : str) {
             destStationIds.add(stationResponse.getStationId());
         }
-
 
         List<String> destRoutesIds = new ArrayList<>();
 
@@ -183,6 +186,7 @@ public class BusService {
         return BusResponse.RouteNumList.from(commonRoutes);
     }
 
+//    정류장 Id로 버스 도착시간 찾는 메서드
     public BusResponse.BusArrivalResonse getBusArrivalTime(BusRequest.BusArrivalRequest req) throws IOException {
 
         BusResponse.BusArrivalResonse ret = null;
@@ -219,6 +223,7 @@ public class BusService {
         return ret;
     }
 
+//    출발지에서 도착지까지 정류장들 찾는 메서드
     public List<BusResponse.BusRouteResponse> getBusRoute(BusRequest.BusRouteRequest req) throws IOException {
 
         List<BusResponse.BusRouteResponse> ret = new ArrayList<>();
@@ -284,6 +289,7 @@ public class BusService {
         return ret;
     }
 
+//    경로에 있는 정류장들 위도경도 찾기
     public BusResponse.busNumStationId getStationXY(BusRequest.BusStationXYRequest req) throws IOException {
         int pageNo = 1;
         boolean found = false;
@@ -326,6 +332,8 @@ public class BusService {
         }
         return ret;
     }
+
+//    버스 번호 찾는 메서드
     public BusResponse.busNum getBusNum(BusRequest.BusNumRequest req) throws IOException {
         BusResponse.busNum ret = null;
         StringBuilder stringBuilder = new StringBuilder("http://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteInfoIem?");
@@ -337,7 +345,7 @@ public class BusService {
         System.out.println(items);
 
         String busNum = items.path("routeno").asText();
-        String num = busNum.replaceAll("\\[.*?\\]", "").trim();
+        String num = busNum.replaceAll("\\[.*?\\]", "").trim(); //한글 제외하고 번호만
         ret = BusResponse.busNum.from(num);
 
         return ret;
